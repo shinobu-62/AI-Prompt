@@ -1,0 +1,8 @@
+{
+  "name": "PromptMaster AI - 提示词优化专家",
+  "description": "专业级AI提示词优化平台，支持图片、视频、分镜及Lovart风格提示词增强，集成图像分析、语音合成与图像生成测试功能。",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
