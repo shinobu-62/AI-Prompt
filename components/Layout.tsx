@@ -6,6 +6,7 @@ interface LayoutProps {
   children: React.ReactNode;
   activeModule: ModuleType;
   onModuleChange: (module: ModuleType) => void;
+  onSwitchKey: () => void;
 }
 
 const navItems = [
@@ -18,7 +19,7 @@ const navItems = [
   { id: ModuleType.IMAGE_EDIT, label: 'AI修图', icon: 'fa-brush' },
 ];
 
-export const Layout: React.FC<LayoutProps> = ({ children, activeModule, onModuleChange }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, activeModule, onModuleChange, onSwitchKey }) => {
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
@@ -32,7 +33,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeModule, onModule
           </h1>
         </div>
         
-        <nav className="flex-1 px-4 py-4 space-y-1">
+        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -49,10 +50,20 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeModule, onModule
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
-          <div className="bg-slate-50 p-4 rounded-xl text-xs text-slate-500">
-            <p>基于 Gemini 3.0 全力驱动</p>
-            <p className="mt-1">体验前沿 AI 优化技术</p>
+        <div className="p-4 border-t border-slate-100 space-y-3">
+          <button 
+            onClick={onSwitchKey}
+            className="w-full flex items-center justify-between px-3 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs text-slate-600 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <i className="fas fa-key"></i>
+              <span>切换 API Key</span>
+            </div>
+            <i className="fas fa-chevron-right text-[10px] opacity-40"></i>
+          </button>
+          <div className="bg-indigo-50/50 p-4 rounded-xl text-[10px] text-indigo-600/80">
+            <p>已授权付费账号</p>
+            <p className="mt-1">由 Gemini 3.0 Pro 提供动力</p>
           </div>
         </div>
       </aside>
@@ -70,10 +81,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeModule, onModule
             </h2>
           </div>
           <div className="flex items-center gap-4">
-            <button className="text-slate-400 hover:text-indigo-600">
-              <i className="far fa-bell text-xl"></i>
+            <button className="text-slate-400 hover:text-indigo-600" title="切换 Key" onClick={onSwitchKey}>
+              <i className="fas fa-sync-alt text-lg"></i>
             </button>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-400 to-purple-400"></div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-400 to-purple-400 ring-2 ring-white shadow-sm"></div>
           </div>
         </header>
         

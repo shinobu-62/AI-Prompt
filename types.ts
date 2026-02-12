@@ -14,6 +14,8 @@ export interface OptimizedPrompt {
   optimized: string;
   explanation: string;
   tags: string[];
+  // Added to support Google Search grounding URLs
+  sources?: { title: string; uri: string }[];
 }
 
 export interface StoryboardItem {

@@ -118,6 +118,27 @@ export const PromptGenerator: React.FC<Props> = ({ type, gemini }) => {
               {result.optimized}
             </div>
 
+            {/* Displaying Google Search grounding sources */}
+            {result.sources && result.sources.length > 0 && (
+              <div className="mb-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                <p className="text-xs text-slate-400 mb-2 font-semibold">参考来源:</p>
+                <div className="flex flex-col gap-1">
+                  {result.sources.map((source, idx) => (
+                    <a 
+                      key={idx} 
+                      href={source.uri} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-indigo-300 text-[11px] hover:underline flex items-center gap-1 truncate"
+                    >
+                      <i className="fas fa-external-link-alt text-[9px]"></i>
+                      {source.title || source.uri}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2 mt-auto">
               {result.tags.map(tag => (
                 <span key={tag} className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] rounded-md border border-slate-200">

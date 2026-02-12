@@ -1,17 +1,65 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { ModuleType } from './types';
 import { PromptGenerator } from './components/PromptGenerator';
 import { ImageTester } from './components/ImageTester';
 import { ImageEditor } from './components/ImageEditor';
 import { ImageAnalyzer } from './components/ImageAnalyzer';
+import { AuthWall } from './components/AuthWall';
 import { GeminiService } from './services/geminiService';
 
+declare global {
+  // Use the predefined AIStudio interface to avoid type mismatch and modifier conflict errors.
+  interface Window {
+    readonly aistudio: AIStudio;
+  }
+}
+
 const App: React.FC = () => {
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [activeModule, setActiveModule] = useState<ModuleType>(ModuleType.IMAGE_ENHANCE);
   
+  // Create GeminiService instance. Internal logic will handle per-call client creation.
   const gemini = useMemo(() => new GeminiService(), []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (window.aistudio && window.aistudio.hasSelectedApiKey) {
+        try {
+          const hasKey = await window.aistudio.hasSelectedApiKey();
+          setIsAuthorized(hasKey);
+        } catch (err) {
+          console.error("Auth check failed", err);
+          setIsAuthorized(false);
+        }
+      } else {
+        // Fallback for environments without the plugin
+        setIsAuthorized(true);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLoginSuccess = () => {
+    setIsAuthorized(true);
+  };
+
+  const handleSwitchKey = async () => {
+    if (window.aistudio && window.aistudio.openSelectKey) {
+      await window.aistudio.openSelectKey();
+      // Assume selection was successful to avoid race conditions
+      setIsAuthorized(true);
+    }
+  };
+
+  if (isAuthorized === null) {
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">加载中...</div>;
+  }
+
+  if (!isAuthorized) {
+    return <AuthWall onLogin={handleLoginSuccess} />;
+  }
 
   const renderModule = () => {
     switch (activeModule) {
@@ -27,7 +75,11 @@ const App: React.FC = () => {
   };
 
   return (
-    <Layout activeModule={activeModule} onModuleChange={setActiveModule}>
+    <Layout 
+      activeModule={activeModule} 
+      onModuleChange={setActiveModule}
+      onSwitchKey={handleSwitchKey}
+    >
       <div className="animate-fadeIn">
         <div className="mb-8">
           <h3 className="text-2xl font-bold text-slate-800 mb-2">
