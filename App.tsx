@@ -17,7 +17,6 @@ const App: React.FC = () => {
   const [baseUrl, setBaseUrl] = useState<string | null>(localStorage.getItem(URL_STORAGE));
   const [activeModule, setActiveModule] = useState<ModuleType>(ModuleType.IMAGE_ENHANCE);
   
-  // Re-create service instance whenever key or url changes
   const gemini = useMemo(() => {
     if (apiKey) {
       return new GeminiService(apiKey, baseUrl || undefined);
@@ -42,7 +41,7 @@ const App: React.FC = () => {
   };
 
   const handleSwitchKey = () => {
-    const newKey = window.prompt('请输入新的 API Key:', apiKey || '');
+    const newKey = window.prompt('请输入新的 API Key (支持 sk- 格式):', apiKey || '');
     if (newKey !== null) {
       const newUrl = window.prompt('请输入新的 Base URL (中转地址):', baseUrl || 'https://generativelanguage.googleapis.com');
       if (newKey.trim()) {
@@ -54,6 +53,11 @@ const App: React.FC = () => {
   if (!apiKey || !gemini) {
     return <AuthWall onLogin={handleLogin} />;
   }
+
+  // 截取 Key 的前 4 位和后 4 位显示
+  const displayKey = apiKey.startsWith('sk-') 
+    ? `sk-...${apiKey.slice(-4)}` 
+    : `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}`;
 
   const renderModule = () => {
     switch (activeModule) {
@@ -100,9 +104,10 @@ const App: React.FC = () => {
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              {baseUrl?.includes('google') ? 'Official Link' : 'Midstation Active'}
+              {apiKey.startsWith('sk-') ? 'OpenAI Style Proxy' : 'Google Native Auth'}
             </div>
-            <span className="text-[9px] text-slate-400 truncate max-w-[150px]">{baseUrl}</span>
+            <span className="text-[10px] text-slate-400 font-mono">{displayKey}</span>
+            <span className="text-[9px] text-slate-300 truncate max-w-[150px]">{baseUrl}</span>
           </div>
         </div>
         
