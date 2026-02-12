@@ -3,16 +3,26 @@ import { GoogleGenAI, Type, GenerateContentResponse, Modality } from "@google/ge
 import { ModuleType, OptimizedPrompt, StoryboardItem } from "../types";
 
 export class GeminiService {
-  // Removed global ai instance to ensure we always use the latest API key per call as per guidelines.
+  private customKey?: string;
+
+  constructor(key?: string) {
+    this.customKey = key;
+  }
+
+  private getClient() {
+    // 优先使用用户输入的 Key，其次使用环境变量
+    const apiKey = this.customKey || process.env.API_KEY || '';
+    if (!apiKey) throw new Error("API Key is missing. Please log in.");
+    return new GoogleGenAI({ apiKey });
+  }
 
   async optimizePrompt(input: string, type: ModuleType): Promise<OptimizedPrompt> {
-    // Always use the latest API key from environment variable
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    const ai = this.getClient();
     const systemInstructions: Record<string, string> = {
       [ModuleType.IMAGE_ENHANCE]: "你是一个顶级的AI绘画提示词专家。你的任务是将用户简单的描述转化成专业、详细、具有艺术感的Midjourney或Stable Diffusion提示词。包含：主体细节、环境灯光、构图、画质术语（如8k, unreal engine 5, ray tracing）、艺术风格。",
       [ModuleType.VIDEO_ENHANCE]: "你是一个顶级的AI视频提示词专家。你的任务是为Runway Gen-2, Pika, Sora等模型优化提示词。必须包含：镜头运动描述（Zoom in, Pan, Dolly shot）、光影动态、材质细节、每秒帧感、情绪氛围。",
       [ModuleType.STORYBOARD]: "你是一个电影分镜规划专家。请将用户的创意需求拆解成专业的分镜脚本。请按JSON格式输出：{ scenes: [{ scene: 1, description: '', camera: '', lighting: '', duration: '' }] }。",
-      [ModuleType.LOVART_STYLE]: "你是一个专注于Lovart风格（优雅、奢华、超现实细节、高级感色彩）的提示词专家。将用户需求转化为具有强烈Lovart艺术风格的描述，强调丝滑材质、柔和高级的光感、充满设计感的排布。",
+      [ModuleType.LOVART_STYLE]: "你是一个专注于Lovart风格（优雅、奢华、超 surreal 细节、高级感色彩）的提示词专家。将用户需求转化为具有强烈Lovart艺术风格的描述，强调丝滑材质、柔和高级的光感、充满设计感的排布。",
     };
 
     const response = await ai.models.generateContent({
@@ -25,7 +35,6 @@ export class GeminiService {
       },
     });
 
-    // Extract grounding URLs as per Search Grounding requirements
     const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks
       ?.map((chunk: any) => chunk.web)
       .filter((web: any) => web && web.uri);
@@ -55,7 +64,7 @@ export class GeminiService {
   }
 
   async generateImage(prompt: string, aspectRatio: string = "1:1"): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: { parts: [{ text: prompt }] },
@@ -64,7 +73,6 @@ export class GeminiService {
       }
     });
 
-    // Iterate through all parts to find the image part
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;
@@ -74,7 +82,7 @@ export class GeminiService {
   }
 
   async analyzeImage(base64Image: string, prompt: string = "请详细描述这张图片的内容，以便我能用来生成类似的图片。"): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: {
@@ -88,7 +96,7 @@ export class GeminiService {
   }
 
   async editImage(base64Image: string, instruction: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
@@ -99,7 +107,6 @@ export class GeminiService {
       }
     });
 
-    // Iterate through all parts to find the image part
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;
@@ -109,7 +116,7 @@ export class GeminiService {
   }
 
   async generateSpeech(text: string): Promise<Uint8Array> {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: `用温柔自然的语气读出：${text}` }] }],
