@@ -3,17 +3,20 @@ import { GoogleGenAI, Type, GenerateContentResponse, Modality } from "@google/ge
 import { ModuleType, OptimizedPrompt, StoryboardItem } from "../types";
 
 export class GeminiService {
-  private customKey?: string;
+  private apiKey: string;
+  private baseUrl?: string;
 
-  constructor(key?: string) {
-    this.customKey = key;
+  constructor(apiKey: string, baseUrl?: string) {
+    this.apiKey = apiKey;
+    this.baseUrl = baseUrl;
   }
 
   private getClient() {
-    // 优先使用用户输入的 Key，其次使用环境变量
-    const apiKey = this.customKey || process.env.API_KEY || '';
-    if (!apiKey) throw new Error("API Key is missing. Please log in.");
-    return new GoogleGenAI({ apiKey });
+    // Exclusively use user-provided key and URL, no process.env fallbacks as requested.
+    return new GoogleGenAI({ 
+      apiKey: this.apiKey,
+      baseUrl: this.baseUrl // Standard property in @google/genai to override the API endpoint
+    });
   }
 
   async optimizePrompt(input: string, type: ModuleType): Promise<OptimizedPrompt> {

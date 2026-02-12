@@ -9,35 +9,49 @@ import { ImageAnalyzer } from './components/ImageAnalyzer';
 import { AuthWall } from './components/AuthWall';
 import { GeminiService } from './services/geminiService';
 
-const STORAGE_KEY = 'PROMPT_MASTER_USER_KEY';
+const KEY_STORAGE = 'PROMPT_MASTER_API_KEY';
+const URL_STORAGE = 'PROMPT_MASTER_BASE_URL';
 
 const App: React.FC = () => {
-  const [userApiKey, setUserApiKey] = useState<string | null>(localStorage.getItem(STORAGE_KEY));
+  const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem(KEY_STORAGE));
+  const [baseUrl, setBaseUrl] = useState<string | null>(localStorage.getItem(URL_STORAGE));
   const [activeModule, setActiveModule] = useState<ModuleType>(ModuleType.IMAGE_ENHANCE);
   
-  // 当密钥更新时，GeminiService 会自动响应
-  const gemini = useMemo(() => new GeminiService(userApiKey || undefined), [userApiKey]);
+  // Re-create service instance whenever key or url changes
+  const gemini = useMemo(() => {
+    if (apiKey) {
+      return new GeminiService(apiKey, baseUrl || undefined);
+    }
+    return null;
+  }, [apiKey, baseUrl]);
 
-  const handleLogin = (key: string) => {
-    localStorage.setItem(STORAGE_KEY, key);
-    setUserApiKey(key);
+  const handleLogin = (key: string, url: string) => {
+    localStorage.setItem(KEY_STORAGE, key);
+    localStorage.setItem(URL_STORAGE, url);
+    setApiKey(key);
+    setBaseUrl(url);
   };
 
   const handleLogout = () => {
-    if (window.confirm('确定要退出并清除 API Key 吗？')) {
-      localStorage.removeItem(STORAGE_KEY);
-      setUserApiKey(null);
+    if (window.confirm('确定要退出并清除所有配置吗？')) {
+      localStorage.removeItem(KEY_STORAGE);
+      localStorage.removeItem(URL_STORAGE);
+      setApiKey(null);
+      setBaseUrl(null);
     }
   };
 
   const handleSwitchKey = () => {
-    const newKey = window.prompt('请输入新的 API Key:', userApiKey || '');
-    if (newKey && newKey.trim()) {
-      handleLogin(newKey.trim());
+    const newKey = window.prompt('请输入新的 API Key:', apiKey || '');
+    if (newKey !== null) {
+      const newUrl = window.prompt('请输入新的 Base URL (中转地址):', baseUrl || 'https://generativelanguage.googleapis.com');
+      if (newKey.trim()) {
+        handleLogin(newKey.trim(), newUrl?.trim() || 'https://generativelanguage.googleapis.com');
+      }
     }
   };
 
-  if (!userApiKey) {
+  if (!apiKey || !gemini) {
     return <AuthWall onLogin={handleLogin} />;
   }
 
@@ -83,9 +97,12 @@ const App: React.FC = () => {
               {activeModule === ModuleType.IMAGE_EDIT && '通过文字描述，让 AI 为你的图片进行局部修改或风格变换'}
             </p>
           </div>
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            API Connected
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              {baseUrl?.includes('google') ? 'Official Link' : 'Midstation Active'}
+            </div>
+            <span className="text-[9px] text-slate-400 truncate max-w-[150px]">{baseUrl}</span>
           </div>
         </div>
         
